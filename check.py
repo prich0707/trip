@@ -16,7 +16,7 @@ import hotel                               # hotel.py (get_accommodations)
 
 current_win = None
 
-# ── 1) 시·도별 RGB 대략 범위 ────────────────────────────────────────────────
+# 시·도별 RGB 대략 범위
 region_ranges = {
     "서울특별시":       {"r": (170, 216), "g": (186, 227), "b": (25,  99)},
     "인천광역시":       {"r": (156, 174), "g": (174, 199), "b": (107, 125)},
@@ -37,7 +37,7 @@ region_ranges = {
     "제주특별자치도":   {"r": (178, 187), "g": (122, 130), "b": (168, 183)},
 }
 
-# ── 2) 좌표 기반 예외 판별용 박스 ─────────────────────────────────────────────
+# 좌표 기반 예외 판별용 박스 
 region_bounds = {
     "서울특별시": [(268, 192, 292, 211)],
     "경기도":     [(255, 123, 355, 275)],
@@ -46,7 +46,7 @@ region_bounds = {
     "충청남도":   [(207, 277, 331, 385)],
 }
 
-# ── 3) 추천 여행지 이름 리스트 (URL 없이) ────────────────────────────────────
+# 추천 여행지 이름 리스트 (URL 없이)
 travel_spots = {
      "서울특별시": [
         "광화문",
@@ -186,7 +186,7 @@ travel_spots = {
     ]
 }
 
-# ── 4) 지도 로드 & OpenCV 변환 ─────────────────────────────────────────────────
+# 지도 로드 & OpenCV 변환
 BASE    = os.path.dirname(os.path.abspath(__file__))
 map_img = Image.open(os.path.join(BASE, "map.jpg"))
 map_arr = np.array(map_img)
@@ -220,7 +220,7 @@ def find_region(x, y, r, g, b):
     """
     (x, y) 위치의 (r,g,b) 값을 보고 어느 시·도인지 반환
     """
-    # ① 박스 기준 우선 판별
+    # 박스 기준 우선 판별
     for region, boxes in region_bounds.items():
         for x1, y1, x2, y2 in boxes:
             if x1 <= x <= x2 and y1 <= y <= y2:
@@ -230,7 +230,7 @@ def find_region(x, y, r, g, b):
                 if rr["r"][0] <= r <= rr["r"][1] and rr["g"][0] <= g <= rr["g"][1] and rr["b"][0] <= b <= rr["b"][1]:
                     return region
 
-    # ② 박스 영역에 걸리지 않으면, 색상만으로 판별
+    # 박스 영역에 걸리지 않으면, 색상만으로 판별
     for region, rr in region_ranges.items():
         if region in region_bounds:
             continue
@@ -270,7 +270,7 @@ def open_region_window(region, master):
     current_win.geometry("1000x800+650+150")
     current_win.title(f"{region} 추천 여행지")
 
-    # ── 상단: 지도/달력 ─────────────────────────
+    # 상단: 지도/달력 
     top_frame   = tk.Frame(current_win); top_frame.pack(fill="x", padx=10, pady=10)
     left_frame  = tk.Frame(top_frame, width=500, height=500); left_frame.pack(side="left", padx=(0,10)); left_frame.pack_propagate(False)
     right_frame = tk.Frame(top_frame, width=500, height=500, bg="#f0f0f0", relief="sunken", borderwidth=1)
@@ -279,7 +279,7 @@ def open_region_window(region, master):
     cal_frame = CalendarFrame(right_frame)
     cal_frame.pack(expand=True, fill="both", padx=5, pady=5)
 
-    # ── 날씨 스크롤 ─────────────────────────────
+    # 날씨 스크롤 
     weather_canvas       = tk.Canvas(current_win, height=120)
     h_scroll             = tk.Scrollbar(current_win, orient="horizontal", command=weather_canvas.xview)
     weather_canvas.configure(xscrollcommand=h_scroll.set)
@@ -288,7 +288,7 @@ def open_region_window(region, master):
     weather_canvas.pack(fill="x", padx=20, pady=(0,10))
     h_scroll.pack(fill="x", padx=20)
 
-    # ── (중요!) 날씨 출력 로직 그대로 여기 안에 복사해 주세요 ─────────
+    # (중요!) 날씨 출력 로직 그대로 여기 안에 복사
     def on_show_weather():
         sd, ed = cal_frame.get_selected_range()
         if not sd or not ed:
@@ -327,14 +327,14 @@ def open_region_window(region, master):
 
     cal_frame.range_button.config(text="선택한 날씨 출력", command=on_show_weather)
 
-    # ── 지도 이미지 ─────────────────────────────
+    # 지도 이미지
     img2  = highlight_region(region)
     ph2   = ImageTk.PhotoImage(img2.resize((500,500)))
     img_label = tk.Label(left_frame, image=ph2)
     img_label.image = ph2
     img_label.pack(fill="both", expand=True)
 
-    # ── 여행지 버튼 ─────────────────────────────
+    # 여행지 버튼
     spots         = travel_spots.get(region, [])
     indoor_spots  = spots[3:6]
     outdoor_spots = spots[:3]
@@ -372,14 +372,21 @@ def open_region_window(region, master):
         b.pack(side="left", padx=5, pady=2)
         outdoor_btns.append(b)
 
-    # ── 숙소 보기 토글 ─────────────────────────────
+    #  숙소 보기 토글
     accom_state   = {"show": False}
     accom_buttons = []
     link_labels   = []
     btn_frame     = None
     link_frame    = None
+    selected_accom_btn = {"btn": None}
 
-    def show_accom_photo(info):
+
+    def show_accom_photo(info, btn):
+        if selected_accom_btn["btn"]:
+            selected_accom_btn["btn"].config(bg="SystemButtonFace")
+        btn.config(bg="gold")
+        selected_accom_btn["btn"] = btn
+
         path = info["image"]
         if os.path.exists(path):
             im = Image.open(path).resize((500,500))
@@ -389,8 +396,8 @@ def open_region_window(region, master):
     def toggle_accommodations():
         nonlocal btn_frame, link_frame
         sd, ed = cal_frame.get_selected_range()
-        
-        # 🚨 조건 불충족 시 UI 변화 없이 경고창만 띄우고 return
+
+        # 조건 불충족 시 UI 변화 없이 경고창만 띄우고 return
         if not sd or not ed or not selected_spot:
             messagebox.showwarning("입력 필요", "관광지와 날짜 2개를 선택해주세요")
             return
@@ -411,10 +418,8 @@ def open_region_window(region, master):
             btn_frame = tk.Frame(current_win)
             btn_frame.pack(fill="x", padx=20, pady=(5,2))
             for info in hotels:
-                hb = tk.Button(
-                    btn_frame, text=info["name"], width=20,
-                    command=lambda inf=info: show_accom_photo(inf)
-                )
+                hb = tk.Button(btn_frame, text=info["name"], width=20)
+                hb.config(command=lambda inf=info, b_ref=hb: show_accom_photo(inf, b_ref))  # 버튼도 전달
                 hb.pack(side="left", padx=5, pady=5)
                 accom_buttons.append(hb)
 
@@ -445,6 +450,7 @@ def open_region_window(region, master):
 
             toggle_btn.config(text="숙소 보기")
             accom_state["show"] = False
+
 
 
     toggle_frame = tk.Frame(current_win)

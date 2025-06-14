@@ -48,12 +48,12 @@ class CalendarFrame(tk.Frame):
         self.cal.tag_config('today', background='red', foreground='white')
 
         # “선택한 날짜 범위 출력” 버튼 (결과를 바로 아래 라벨에 표시)
-        self.range_button = tk.Button(self, text="선택한 날짜 범위 출력", command=self.show_range)
-        self.range_button.pack(pady=5)
+        #self.range_button = tk.Button(self, text="선택한 날짜 범위 출력", command=self.show_range)
+        #self.range_button.pack(pady=5)
 
         # 선택 결과를 보여 줄 라벨
-        self.result_label = tk.Label(self, text="", font=('Arial', 12))
-        self.result_label.pack(pady=5)
+        #self.result_label = tk.Label(self, text="", font=('Arial', 12))
+        #self.result_label.pack(pady=5)
 
     def on_date_select(self, event):
         """

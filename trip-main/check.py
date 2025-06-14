@@ -22,7 +22,7 @@ current_win = None
 def send_spot_udp(spot: str):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(spot.encode(), ("172.17.66.53", 9999))
+            s.sendto(spot.encode(), ("localhost", 9999))
             s.settimeout(1.0)
             data, _ = s.recvfrom(1024)
             print("서버 응답:", data.decode())
@@ -36,7 +36,7 @@ def send_spot_udp(spot: str):
 def get_ranking_udp() -> dict:
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(b"RANKING", ("172.17.66.53", 9999))
+            s.sendto(b"RANKING", ("localhost", 9999))
             s.settimeout(2.0)
             data, _ = s.recvfrom(4096)
             return json.loads(data.decode())
@@ -315,8 +315,7 @@ def open_region_window(region, master):
     weather_canvas.pack(fill="x", padx=20, pady=(0,10))
     h_scroll.pack(fill="x", padx=20)
 
-    #관광지 랭킹
-    # ✅ 여행지 순위 UI 수정:
+    #관광지 랭킹 버튼 이벤트함수
     def on_show_ranking():
         for w in weather_scroll_frame.winfo_children(): w.destroy()
 
@@ -359,6 +358,7 @@ def open_region_window(region, master):
 
 
     # (중요!) 날씨 출력 로직 그대로 여기 안에 복사
+    #날씨 버튼 이벤트함수
     def on_show_weather():
         sd, ed = cal_frame.get_selected_range()
         if not sd or not ed:
@@ -493,12 +493,14 @@ def open_region_window(region, master):
         nonlocal btn_frame, link_frame
         sd, ed = cal_frame.get_selected_range()
 
+        # 조건 불충족 시 UI 변화 없이 경고창만 띄우고 return
         if not sd or not ed or not selected_spot:
             messagebox.showwarning("입력 필요", "관광지와 날짜 2개를 선택해주세요")
             return
 
         if not accom_state["show"]:
             send_spot_udp(f"{selected_spot}: 조횟수")
+            # cal_frame.pack_forget()  # ❌ 제거
             indoor_frame.pack_forget()
             outdoor_frame.pack_forget()
 
@@ -521,16 +523,12 @@ def open_region_window(region, master):
             link_frame = tk.Frame(current_win)
             link_frame.pack(fill="x", padx=20, pady=(0,10))
             lk = tk.Label(link_frame,
-                        text=hotels[0]["url"],
-                        fg="blue", cursor="hand2")
+                          text=hotels[0]["url"],
+                          fg="blue", cursor="hand2")
             lk.pack(side="left", padx=5)
             lk.bind("<Button-1>",
                     lambda e, url=hotels[0]["url"]: webbrowser.open(url))
             link_labels.append(lk)
-
-            # ✅ 첫 번째 숙소 자동 선택 및 이미지 표시
-            if hotels:
-                show_accom_photo(hotels[0], accom_buttons[0])
 
             toggle_btn.config(text="관광지 보기")
             accom_state["show"] = True
@@ -538,11 +536,10 @@ def open_region_window(region, master):
         else:
             for b in accom_buttons: b.destroy()
             for l in link_labels:   l.destroy()
-            if btn_frame: btn_frame.destroy()
-            if link_frame: link_frame.destroy()
+            btn_frame.destroy()
+            link_frame.destroy()
             accom_buttons.clear()
             link_labels.clear()
-            selected_accom_btn["btn"] = None  # ✅ 선택된 버튼 초기화
 
             cal_frame.pack(expand=True, fill="both", padx=5, pady=5)
             indoor_frame.pack(fill="x", padx=20, pady=(5,2))
@@ -550,7 +547,6 @@ def open_region_window(region, master):
 
             toggle_btn.config(text="숙소 보기")
             accom_state["show"] = False
-
 
 
     toggle_frame = tk.Frame(current_win)
